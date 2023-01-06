@@ -8,24 +8,75 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using GadgetsOnline.Models;
+using GadgetsOnline.Services;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 
-namespace GadgetsOnline
+var builder = WebApplication.CreateBuilder(args);
+ConfigureServices(builder.Services);
+var app = builder.Build();
+Configure();
+app.Run();
+
+void ConfigureServices(IServiceCollection services)
 {
-
-    public class Program
+    services.AddDistributedMemoryCache();
+    services.AddSession(options =>
     {
-        public static void Main(string[] args)
-        {
-            CreateHostBuilder(args).Build().Run();
-        }
+        options.IdleTimeout = TimeSpan.FromHours(1);
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true;
+    });
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+    services.AddControllersWithViews();
+    services.AddDbContext<GadgetsOnlineEntities>(opt =>
+    {
+
+        opt.UseSqlServer(builder.Configuration.GetConnectionString(nameof(GadgetsOnlineEntities)));
+    });
+
+    // seed data
+    using (var context = new GadgetsOnlineEntities(builder.Configuration.GetConnectionString(nameof(GadgetsOnlineEntities))))
+    {
+        context.Database.EnsureCreated();
+        context.SaveChanges();
     }
 
+    services.AddScoped<IInventory, Inventory>();
+    services.AddScoped<IShoppingCart, ShoppingCart>();
+    services.AddScoped<IOrderProcessing, OrderProcessing>();
+    //Added Services
+}
 
+// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+void Configure()
+{
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+    }
+    else
+    {
+        app.UseExceptionHandler("/Home/Error");
+        // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+        app.UseHsts();
+    }
+    app.UseHttpsRedirection();
+    app.UseStaticFiles();
+
+    //Added Middleware
+
+    app.UseRouting();
+
+    app.UseAuthorization();
+
+    app.UseSession();
+
+    app.UseEndpoints(endpoints =>
+    {
+        endpoints.MapControllerRoute(
+            name: "default",
+            pattern: "{controller=Home}/{action=Index}/{id?}");
+    });
 }
