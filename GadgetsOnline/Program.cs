@@ -14,8 +14,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseWebRoot("wwwroot");
-builder.WebHost.UseStaticWebAssets();
 ConfigureServices(builder.Services);
 var app = builder.Build();
 
