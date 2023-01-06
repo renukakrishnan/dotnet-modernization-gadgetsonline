@@ -13,12 +13,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
-var builder = WebApplication.CreateBuilder(
-    new WebApplicationOptions
-    {
-        Args = args,
-        WebRootPath = "webroot"
-    });
+var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseWebRoot("wwwroot");
 builder.WebHost.UseStaticWebAssets();
 ConfigureServices(builder.Services);
 var app = builder.Build();
